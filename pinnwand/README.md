@@ -27,19 +27,19 @@ The Pinnwand installer script is a Bash script designed to automate the installa
    ```
 Simply re-run the script to upgrade and existing installation.
 
-## Running pinnwand
+### Running pinnwand
 
 Create a `config.toml` with desired configuration options.
 
 An example config file is available in the source tree under `etc/pinnwand-toml-example`.
 
-### Manually
+#### Manually
 Specify the configuring file and the TCP/IP listening port on the command line.
 ```bash
 sudo -u pinnwand-user path/to/pinnwand/venv/bin/pinnwand --configuration-path config.toml http --port 1234
 ```
 
-### OpenRC init.d script
+#### OpenRC init.d script
 The provided init scripts help you run pinnwand as a service on a OpenRC system such as Gentoo and Alpine Linux.
 
 1. Cooy `pinnwand.initd` to `/etc/init.d/pinnwand`
@@ -47,3 +47,32 @@ The provided init scripts help you run pinnwand as a service on a OpenRC system 
 3. Set the correct user and path in `/etc/conf.d/pinnwand`
 4. Run `rc-update add pinnwand` to enable autostart on boot.
 5. Run `rc-service pinnwand start` to start pinnwand now.
+
+
+## gist.sh - paste from command line
+Sometimes you nay need to paste a log file, a snippet or code or a kernel log to a pastebin service.
+
+The siplest way may be to use `curl`, as described on https://pinnwand.readthedocs.io/en/latest/tricks.html
+
+```bash
+cat file | curl -X POST http://localhost:8000/curl -F 'raw=<-'
+```
+
+I wanted a little more control over language (lexer) selection and be able to upload several files in one go, so I expanded on the curl script and ended up with `gist.sh`.
+
+```
+Usage: gist.sh [options] [file1 file2 ...]
+Options:
+  -e, --expiry <expiry>   Set the expiry time for the paste (e.g., 1day, 1hour).
+                          Default is '1day' if not specified.
+  -l, --lexer <lexer>     Specify the lexer to use for syntax highlighting.
+  --lexers                List all available lexers in 'name : description' format.
+  -h, --help              Show this help message and exit.
+```
+
+### Examples
+```bash
+  gist.sh -e 1hour -l python file1 file2
+  gist.sh --lexers
+  dmesg | gist.sh -l kmsg
+```
