@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Base URL of the Pinnwand instance
 PINNWAND_BASE_URL="https://gist.tnonline.net/api/v1"
 PASTE_URL="${PINNWAND_BASE_URL}/paste"
@@ -20,7 +22,6 @@ Options:
   -e, --expiry <expiry>   Set the expiry time for the paste (e.g., 1day, 1hour).
                           Default is '1day' if not specified.
   -l, --lexer <lexer>     Specify the lexer to use for syntax highlighting.
-                          Default is 'text' if not specified.
   --lexers                List all available lexers in 'name : description' format.
   -h, --help              Show this help message and exit.
 

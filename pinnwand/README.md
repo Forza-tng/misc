@@ -25,7 +25,7 @@ The Pinnwand installer script is a Bash script designed to automate the installa
    ```bash
    sudo -u pinnwand-user ./pinnwand-installer.sh
    ```
-Simply re-run the script to upgrade and existing installation.
+Simply re-run the script to upgrade an existing installation.
 
 ### Running pinnwand
 
