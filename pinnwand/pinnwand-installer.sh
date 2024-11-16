@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# SPDX-License-Identifier: CC0-1.0
+
 # Variables
 USER="pinnwand"
 HOME_DIR="/home/${USER}"
