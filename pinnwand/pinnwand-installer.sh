@@ -40,7 +40,7 @@ if [ "$USE_LOCAL_SRC" = "true" ]; then
 else
 	# Detect the latest tag if GIT_REF is not set
 	GIT_REF="${GIT_REF:-}"
-	
+
 	if [ -z "$GIT_REF" ]; then
 		echo "GIT_REF is not set. Detecting the latest tag from remote..."
 		GIT_REF=$(get_latest_tag_remote)
@@ -61,14 +61,13 @@ else
 		# Reset the repository to ensure a clean state
 		git fetch -q --all || { echo "Failed to fetch updates from repository."; exit 1; }
 		git reset -q --hard "$GIT_REF" || { echo "Failed to reset to $GIT_REF."; exit 1; }
-	
+
 		popd > /dev/null
 	fi
 fi
 
 echo "Source preparation complete."
 
-exit
 # Check if the virtual environment exists and is valid; create it if necessary
 if [ ! -d "$VENV_DIR" ]; then
 	echo "Virtual environment not found. Creating it now..."
