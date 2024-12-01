@@ -1,0 +1,581 @@
+From 72456935fc3fd570c55d0aa1a46f663b9f4032cb Mon Sep 17 00:00:00 2001
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Date: Sun, 24 Oct 2021 17:31:04 +0200
+Subject: [PATCH 1/6] btrfs: add flags to give an hint to the chunk allocator
+
+Add the following flags to give an hint about which chunk should be
+allocated in which a disk.
+The following flags are created:
+
+- BTRFS_DEV_ALLOCATION_PREFERRED_DATA
+  preferred data chunk, but metadata chunk allowed
+- BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
+  preferred metadata chunk, but data chunk allowed
+- BTRFS_DEV_ALLOCATION_METADATA_ONLY
+  only metadata chunk allowed
+- BTRFS_DEV_ALLOCATION_DATA_ONLY
+  only data chunk allowed
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwid.it>
+---
+ include/uapi/linux/btrfs_tree.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index fc3c32186d7eb1..0261ed5f0adabd 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -557,6 +557,20 @@ struct btrfs_node {
+ 	struct btrfs_key_ptr ptrs[];
+ } __attribute__ ((__packed__));
+ 
++/* dev_item.type */
++
++/* btrfs chunk allocation hints */
++#define BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT	3
++/* preferred data chunk, but metadata chunk allowed */
++#define BTRFS_DEV_ALLOCATION_PREFERRED_DATA	(0ULL)
++/* preferred metadata chunk, but data chunk allowed */
++#define BTRFS_DEV_ALLOCATION_PREFERRED_METADATA	(1ULL)
++/* only metadata chunk are allowed */
++#define BTRFS_DEV_ALLOCATION_METADATA_ONLY	(2ULL)
++/* only data chunk allowed */
++#define BTRFS_DEV_ALLOCATION_DATA_ONLY		(3ULL)
++/* 5..7 are unused values */
++
+ struct btrfs_dev_item {
+ 	/* the internal btrfs device id */
+ 	__le64 devid;
+
+From 125bbd9c1c917ae2ca4ab11e3c15d11be49f6012 Mon Sep 17 00:00:00 2001
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Date: Sun, 24 Oct 2021 17:31:05 +0200
+Subject: [PATCH 2/6] btrfs: export dev_item.type in
+ /sys/fs/btrfs/<uuid>/devinfo/<devid>/type
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ fs/btrfs/sysfs.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index c9198723e4cb73..4364707be8b5ad 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1821,6 +1821,16 @@ static ssize_t btrfs_devinfo_error_stats_show(struct kobject *kobj,
+ }
+ BTRFS_ATTR(devid, error_stats, btrfs_devinfo_error_stats_show);
+ 
++static ssize_t btrfs_devinfo_type_show(struct kobject *kobj,
++					    struct kobj_attribute *a, char *buf)
++{
++	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
++						   devid_kobj);
++
++	return scnprintf(buf, PAGE_SIZE, "0x%08llx\n", device->type);
++}
++BTRFS_ATTR(devid, type, btrfs_devinfo_type_show);
++
+ /*
+  * Information about one device.
+  *
+@@ -1834,6 +1844,7 @@ static struct attribute *devid_attrs[] = {
+ 	BTRFS_ATTR_PTR(devid, replace_target),
+ 	BTRFS_ATTR_PTR(devid, scrub_speed_max),
+ 	BTRFS_ATTR_PTR(devid, writeable),
++	BTRFS_ATTR_PTR(devid, type),
+ 	NULL
+ };
+ ATTRIBUTE_GROUPS(devid);
+
+From d7cb7984ed3ccbb9dc1123cffd3ac3f18761631d Mon Sep 17 00:00:00 2001
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Date: Sun, 24 Oct 2021 17:31:06 +0200
+Subject: [PATCH 3/6] btrfs: change the DEV_ITEM 'type' field via sysfs
+
+Signed-off-by: Kai Krakow <kai@kaishome.de>
+---
+ fs/btrfs/sysfs.c   | 56 +++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.c |  2 +-
+ fs/btrfs/volumes.h |  2 ++
+ 3 files changed, 58 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 4364707be8b5ad..1079e5574dd4c5 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1829,7 +1829,61 @@ static ssize_t btrfs_devinfo_type_show(struct kobject *kobj,
+ 
+ 	return scnprintf(buf, PAGE_SIZE, "0x%08llx\n", device->type);
+ }
+-BTRFS_ATTR(devid, type, btrfs_devinfo_type_show);
++
++static ssize_t btrfs_devinfo_type_store(struct kobject *kobj,
++				 struct kobj_attribute *a,
++				 const char *buf, size_t len)
++{
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_root *root;
++	struct btrfs_device *device;
++	int ret;
++	struct btrfs_trans_handle *trans;
++
++	u64 type, prev_type;
++
++	device = container_of(kobj, struct btrfs_device, devid_kobj);
++	fs_info = device->fs_info;
++	if (!fs_info)
++		return -EPERM;
++
++	root = fs_info->chunk_root;
++	if (sb_rdonly(fs_info->sb))
++		return -EROFS;
++
++	ret = kstrtou64(buf, 0, &type);
++	if (ret < 0)
++		return -EINVAL;
++
++	/* for now, allow to touch only the 'allocation hint' bits */
++	if (type & ~((1 << BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT) - 1))
++		return -EINVAL;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	prev_type = device->type;
++	device->type = type;
++
++	ret = btrfs_update_device(trans, device);
++
++	if (ret < 0) {
++		btrfs_abort_transaction(trans, ret);
++		btrfs_end_transaction(trans);
++		goto abort;
++	}
++
++	ret = btrfs_commit_transaction(trans);
++	if (ret < 0)
++		goto abort;
++
++	return len;
++abort:
++	device->type = prev_type;
++	return  ret;
++}
++BTRFS_ATTR_RW(devid, type, btrfs_devinfo_type_show, btrfs_devinfo_type_store);
+ 
+ /*
+  * Information about one device.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d2285c9726e7b1..7778f55e659325 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2863,7 +2863,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	return ret;
+ }
+ 
+-static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
++noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
+ 					struct btrfs_device *device)
+ {
+ 	int ret;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 2128a032c3b74d..917d75b7b983e3 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -745,6 +745,8 @@ int btrfs_bg_type_to_factor(u64 flags);
+ const char *btrfs_bg_type_to_raid_name(u64 flags);
+ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
+ bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical);
++int btrfs_update_device(struct btrfs_trans_handle *trans,
++                                       struct btrfs_device *device);
+ 
+ bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
+ u8 *btrfs_sb_fsid_ptr(struct btrfs_super_block *sb);
+
+From c73c4edad5c1422e4baa991a5c40508e09dfb20e Mon Sep 17 00:00:00 2001
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Date: Sun, 24 Oct 2021 17:31:07 +0200
+Subject: [PATCH 4/6] btrfs: add allocator_hint mode
+
+When this mode is enabled, the chunk allocation policy is modified as
+follow.
+
+Each disk may have a different tag:
+- BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
+- BTRFS_DEV_ALLOCATION_METADATA_ONLY
+- BTRFS_DEV_ALLOCATION_DATA_ONLY
+- BTRFS_DEV_ALLOCATION_PREFERRED_DATA (default)
+
+Where:
+- ALLOCATION_PREFERRED_X means that it is preferred to use this disk for
+the X chunk type (the other type may be allowed when the space is low)
+- ALLOCATION_X_ONLY means that it is used *only* for the X chunk type.
+This means also that it is a preferred choice.
+
+Each time the allocator allocates a chunk of type X , first it takes the
+disks tagged as ALLOCATION_X_ONLY or ALLOCATION_PREFERRED_X; if the space
+is not enough, it uses also the disks tagged as ALLOCATION_METADATA_ONLY;
+if the space is not enough, it uses also the other disks, with the
+exception of the one marked as ALLOCATION_PREFERRED_Y, where Y the other
+type of chunk (i.e. not X).
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ fs/btrfs/volumes.c | 97 +++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.h |  1 +
+ 2 files changed, 97 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7778f55e659325..a5bcad391276a5 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -174,6 +174,19 @@ enum btrfs_raid_types __attribute_const__ btrfs_bg_flags_to_raid_index(u64 flags
+ 	return BTRFS_BG_FLAG_TO_INDEX(profile);
+ }
+ 
++#define BTRFS_DEV_ALLOCATION_MASK ((1ULL << \
++		BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT) - 1)
++#define BTRFS_DEV_ALLOCATION_MASK_COUNT (1ULL << \
++		BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT)
++
++static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_MASK_COUNT] = {
++	[BTRFS_DEV_ALLOCATION_DATA_ONLY] = -1,
++	[BTRFS_DEV_ALLOCATION_PREFERRED_DATA] = 0,
++	[BTRFS_DEV_ALLOCATION_PREFERRED_METADATA] = 1,
++	[BTRFS_DEV_ALLOCATION_METADATA_ONLY] = 2,
++	/* the other values are set to 0 */
++};
++
+ const char *btrfs_bg_type_to_raid_name(u64 flags)
+ {
+ 	const int index = btrfs_bg_flags_to_raid_index(flags);
+@@ -5053,13 +5066,18 @@ static int btrfs_add_system_chunk(struct btrfs_fs_info *fs_info,
+ }
+ 
+ /*
+- * sort the devices in descending order by max_avail, total_avail
++ * sort the devices in descending order by alloc_hint,
++ * max_avail, total_avail
+  */
+ static int btrfs_cmp_device_info(const void *a, const void *b)
+ {
+ 	const struct btrfs_device_info *di_a = a;
+ 	const struct btrfs_device_info *di_b = b;
+ 
++	if (di_a->alloc_hint > di_b->alloc_hint)
++		return -1;
++	if (di_a->alloc_hint < di_b->alloc_hint)
++		return 1;
+ 	if (di_a->max_avail > di_b->max_avail)
+ 		return -1;
+ 	if (di_a->max_avail < di_b->max_avail)
+@@ -5212,6 +5230,8 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 	int ndevs = 0;
+ 	u64 max_avail;
+ 	u64 dev_offset;
++	int hint;
++	int i;
+ 
+ 	/*
+ 	 * in the first pass through the devices list, we gather information
+@@ -5264,16 +5284,91 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 		devices_info[ndevs].max_avail = max_avail;
+ 		devices_info[ndevs].total_avail = total_avail;
+ 		devices_info[ndevs].dev = device;
++
++		if ((ctl->type & BTRFS_BLOCK_GROUP_DATA) &&
++		     (ctl->type & BTRFS_BLOCK_GROUP_METADATA)) {
++			/*
++			 * if mixed bg set all the alloc_hint
++			 * fields to the same value, so the sorting
++			 * is not affected
++			 */
++			devices_info[ndevs].alloc_hint = 0;
++		} else if (ctl->type & BTRFS_BLOCK_GROUP_DATA) {
++			hint = device->type & BTRFS_DEV_ALLOCATION_MASK;
++
++			/*
++			 * skip BTRFS_DEV_METADATA_ONLY disks
++			 */
++			if (hint == BTRFS_DEV_ALLOCATION_METADATA_ONLY)
++				continue;
++			/*
++			 * if a data chunk must be allocated,
++			 * sort also by hint (data disk
++			 * higher priority)
++			 */
++			devices_info[ndevs].alloc_hint = -alloc_hint_map[hint];
++		} else { /* BTRFS_BLOCK_GROUP_METADATA */
++			hint = device->type & BTRFS_DEV_ALLOCATION_MASK;
++
++			/*
++			 * skip BTRFS_DEV_DATA_ONLY disks
++			 */
++			if (hint == BTRFS_DEV_ALLOCATION_DATA_ONLY)
++				continue;
++			/*
++			 * if a data chunk must be allocated,
++			 * sort also by hint (metadata hint
++			 * higher priority)
++			 */
++			devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
++		}
++
+ 		++ndevs;
+ 	}
+ 	ctl->ndevs = ndevs;
+ 
++	/*
++	 * no devices available
++	 */
++	if (!ndevs)
++		return 0;
++
+ 	/*
+ 	 * now sort the devices by hole size / available space
+ 	 */
+ 	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+ 	     btrfs_cmp_device_info, NULL);
+ 
++	/*
++	 * select the minimum set of disks grouped by hint that
++	 * can host the chunk
++	 */
++	ndevs = 0;
++	while (ndevs < ctl->ndevs) {
++		hint = devices_info[ndevs++].alloc_hint;
++		while (ndevs < ctl->ndevs &&
++		       devices_info[ndevs].alloc_hint == hint)
++				ndevs++;
++		if (ndevs >= ctl->devs_min)
++			break;
++	}
++
++	BUG_ON(ndevs > ctl->ndevs);
++	ctl->ndevs = ndevs;
++
++	/*
++	 * the next layers require the devices_info ordered by
++	 * max_avail. If we are returing two (or more) different
++	 * group of alloc_hint, this is not always true. So sort
++	 * these gain.
++	 */
++
++	for (i = 0 ; i < ndevs ; i++)
++		devices_info[i].alloc_hint = 0;
++
++	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
++	     btrfs_cmp_device_info, NULL);
++
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 917d75b7b983e3..12777e8e2769c8 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -493,6 +493,7 @@ struct btrfs_device_info {
+ 	u64 dev_offset;
+ 	u64 max_avail;
+ 	u64 total_avail;
++	int alloc_hint;
+ };
+ 
+ struct btrfs_raid_attr {
+
+From 0d266c390e9bb843c3b63747dab2e7c80979e7b2 Mon Sep 17 00:00:00 2001
+From: Kai Krakow <kk@netactive.de>
+Date: Thu, 27 Jun 2024 20:05:58 +0200
+Subject: [PATCH 5/6] btrfs: add allocator_hint for no allocation preferred
+
+This is useful where you want to prevent new allocations of chunks on a
+disk which is going to removed from the pool anyways, e.g. due to bad
+blocks or because it's slow.
+---
+ fs/btrfs/volumes.c              | 6 +++++-
+ include/uapi/linux/btrfs_tree.h | 2 ++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a5bcad391276a5..ffcb6ee7c50ee2 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -184,6 +184,7 @@ static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_MASK_COUNT] = {
+ 	[BTRFS_DEV_ALLOCATION_PREFERRED_DATA] = 0,
+ 	[BTRFS_DEV_ALLOCATION_PREFERRED_METADATA] = 1,
+ 	[BTRFS_DEV_ALLOCATION_METADATA_ONLY] = 2,
++	[BTRFS_DEV_ALLOCATION_PREFERRED_NONE] = 99,
+ 	/* the other values are set to 0 */
+ };
+ 
+@@ -5320,7 +5321,10 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 			 * sort also by hint (metadata hint
+ 			 * higher priority)
+ 			 */
+-			devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
++			if (hint == BTRFS_DEV_ALLOCATION_PREFERRED_NONE)
++				devices_info[ndevs].alloc_hint = -alloc_hint_map[hint];
++			else
++				devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
+ 		}
+ 
+ 		++ndevs;
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 0261ed5f0adabd..9946e497dc8367 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -569,6 +569,8 @@ struct btrfs_node {
+ #define BTRFS_DEV_ALLOCATION_METADATA_ONLY	(2ULL)
+ /* only data chunk allowed */
+ #define BTRFS_DEV_ALLOCATION_DATA_ONLY		(3ULL)
++/* preferred no chunk, but chunks allowed */
++#define BTRFS_DEV_ALLOCATION_PREFERRED_NONE	(4ULL)
+ /* 5..7 are unused values */
+ 
+ struct btrfs_dev_item {
+
+From 76e1b3eeb9a99149bf171453f2f7ced1040e3c41 Mon Sep 17 00:00:00 2001
+From: Qu Wenruo <wqu@suse.com>
+Date: Mon, 15 Jul 2024 16:07:07 +0930
+Subject: [PATCH 6/6] btrfs: tree-checker: validate dref root and objectid
+
+Not yet upstreamed.
+
+[CORRUPTION]
+There is a bug report that btrfs flips RO due to a corruption in the
+extent tree, the involved dumps looks like this:
+
+ 	item 188 key (402811572224 168 4096) itemoff 14598 itemsize 79
+ 		extent refs 3 gen 3678544 flags 1
+ 		ref#0: extent data backref root 13835058055282163977 objectid 281473384125923 offset 81432576 count 1
+ 		ref#1: shared data backref parent 1947073626112 count 1
+ 		ref#2: shared data backref parent 1156030103552 count 1
+ BTRFS critical (device vdc1: state EA): unable to find ref byte nr 402811572224 parent 0 root 265 owner 28703026 offset 81432576 slot 189
+ BTRFS error (device vdc1: state EA): failed to run delayed ref for logical 402811572224 num_bytes 4096 type 178 action 2 ref_mod 1: -2
+
+[CAUSE]
+The corrupted entry is ref#0 of item 188.
+The root number 13835058055282163977 is beyond the upper limit for root
+items (the current limit is 1 << 48), and the objectid also looks
+suspicious.
+
+Only the offset and count is correct.
+
+[ENHANCEMENT]
+Although it's still unknown why we have such many bytes corrupted
+randomly, we can still enhance the tree-checker for data backrefs by:
+
+- Validate the root value
+  For now there should only be 3 types of roots can have data backref:
+  * subvolume trees
+  * data reloc trees
+  * root tree
+    Only for v1 space cache
+
+- validate the objectid value
+  The objectid should be a valid inode number.
+
+Hopefully we can catch such problem in the future with the new checkers.
+
+Reported-by: Kai Krakow <hurikhan77@gmail.com>
+Link: https://lore.kernel.org/linux-btrfs/CAMthOuPjg5RDT-G_LXeBBUUtzt3cq=JywF+D1_h+JYxe=WKp-Q@mail.gmail.com/#t
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/tree-checker.c | 47 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 5d6cfa618dc475..f14825f3d4e822 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -1265,6 +1265,19 @@ static void extent_err(const struct extent_buffer *eb, int slot,
+ 	va_end(args);
+ }
+ 
++static bool is_valid_dref_root(u64 rootid)
++{
++	/*
++	 * The following tree root objectids are allowed to have a data backref:
++	 * - subvolume trees
++	 * - data reloc tree
++	 * - tree root
++	 *   For v1 space cache
++	 */
++	return is_fstree(rootid) || rootid == BTRFS_DATA_RELOC_TREE_OBJECTID ||
++	       rootid == BTRFS_ROOT_TREE_OBJECTID;
++}
++
+ static int check_extent_item(struct extent_buffer *leaf,
+ 			     struct btrfs_key *key, int slot,
+ 			     struct btrfs_key *prev_key)
+@@ -1417,6 +1430,8 @@ static int check_extent_item(struct extent_buffer *leaf,
+ 		struct btrfs_extent_data_ref *dref;
+ 		struct btrfs_shared_data_ref *sref;
+ 		u64 seq;
++		u64 dref_root;
++		u64 dref_objectid;
+ 		u64 dref_offset;
+ 		u64 inline_offset;
+ 		u8 inline_type;
+@@ -1460,11 +1475,26 @@ static int check_extent_item(struct extent_buffer *leaf,
+ 		 */
+ 		case BTRFS_EXTENT_DATA_REF_KEY:
+ 			dref = (struct btrfs_extent_data_ref *)(&iref->offset);
++			dref_root = btrfs_extent_data_ref_root(leaf, dref);
++			dref_objectid = btrfs_extent_data_ref_objectid(leaf, dref);
+ 			dref_offset = btrfs_extent_data_ref_offset(leaf, dref);
+ 			seq = hash_extent_data_ref(
+ 					btrfs_extent_data_ref_root(leaf, dref),
+ 					btrfs_extent_data_ref_objectid(leaf, dref),
+ 					btrfs_extent_data_ref_offset(leaf, dref));
++			if (unlikely(!is_valid_dref_root(dref_root))) {
++				extent_err(leaf, slot,
++					   "invalid data ref root value %llu",
++					   dref_root);
++				return -EUCLEAN;
++			}
++			if (unlikely(dref_objectid < BTRFS_FIRST_FREE_OBJECTID ||
++				     dref_objectid > BTRFS_LAST_FREE_OBJECTID)) {
++				extent_err(leaf, slot,
++					   "invalid data ref objectid value %llu",
++					   dref_root);
++				return -EUCLEAN;
++			}
+ 			if (unlikely(!IS_ALIGNED(dref_offset,
+ 						 fs_info->sectorsize))) {
+ 				extent_err(leaf, slot,
+@@ -1600,6 +1630,8 @@ static int check_extent_data_ref(struct extent_buffer *leaf,
+ 		return -EUCLEAN;
+ 	}
+ 	for (; ptr < end; ptr += sizeof(*dref)) {
++		u64 root;
++		u64 objectid;
+ 		u64 offset;
+ 
+ 		/*
+@@ -1607,7 +1639,22 @@ static int check_extent_data_ref(struct extent_buffer *leaf,
+ 		 * overflow from the leaf due to hash collisions.
+ 		 */
+ 		dref = (struct btrfs_extent_data_ref *)ptr;
++		root = btrfs_extent_data_ref_root(leaf, dref);
++		objectid = btrfs_extent_data_ref_objectid(leaf, dref);
+ 		offset = btrfs_extent_data_ref_offset(leaf, dref);
++		if (unlikely(!is_valid_dref_root(root))) {
++			extent_err(leaf, slot,
++				   "invalid extent data backref root value %llu",
++				   root);
++			return -EUCLEAN;
++		}
++		if (unlikely(objectid < BTRFS_FIRST_FREE_OBJECTID ||
++			     objectid > BTRFS_LAST_FREE_OBJECTID)) {
++			extent_err(leaf, slot,
++				   "invalid extent data backref objectid value %llu",
++				   root);
++			return -EUCLEAN;
++		}
+ 		if (unlikely(!IS_ALIGNED(offset, leaf->fs_info->sectorsize))) {
+ 			extent_err(leaf, slot,
+ 	"invalid extent data backref offset, have %llu expect aligned to %u",
