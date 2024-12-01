@@ -24,7 +24,7 @@ This repository is a mirror of the patches that have been graciously compiled an
 [Kakra's GitHub Repository](https://github.com/kakra/linux/pull/36)
 
 ### More Information
-For an in-depth explanation of the patches, how they work, and real-world examples, visit the wiki page: [Allocator Hints on TNOnline Wiki](https://wiki.tnonline.net/w/Btrfs/Allocator_Hints)
+For an in-depth explanation of the patches, how they work, and real-world examples, visit the wiki page: [Btrfs/Allocator Hints](https://wiki.tnonline.net/w/Btrfs/Allocator_Hints)
 
 ## Disclaimer
 These patches are experimental and not officially included in the Linux kernel. Use them at your own risk. Always ensure you have backups of your data before testing these patches in production environments.
