@@ -17,8 +17,7 @@ The patches in this repository are named according to the kernel version they ar
 Each patch is tailored to work with its respective kernel version. Ensure you match the patch version to your Linux kernel version to avoid compatibility issues.
 
 ### Original Discussion
-You can find the original discussion about these patches on the Linux Btrfs mailing list:
-- [Allocator Hints Patch Series on lore.kernel.org](https://lore.kernel.org/all/Yhk5kyZL1J8hoQvX%40zen/T/)
+You can find the original discussion about these patches on the Linux Btrfs mailing list: [Allocator Hints Patch Series on lore.kernel.org](https://lore.kernel.org/all/Yhk5kyZL1J8hoQvX%40zen/T/)
 
 ### Author of this patch set
 This repository is a mirror of the patches that have been graciously compiled and maintained by Kakra. They are available on his GitHub page:
