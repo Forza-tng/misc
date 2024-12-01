@@ -32,7 +32,7 @@ These patches are experimental and not officially included in the Linux kernel. 
 For questions or feedback, feel free to visit the wiki or reach out via [IRC](https://wiki.tnonline.net/w/Btrfs/IRC).
 
 ## License
-The licensing of these patches has not been explicitly stated in this repository. However, given their origin and intended use with the Linux kernel, they are likely under the terms of the **GNU General Public License, version 2 (GPLv2)**, which is the license of the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/COPYING) itself.
+The licensing of these patches has not been explicitly stated. However, given their origin and intended use with the Linux kernel, they are likely under the terms of the **GNU General Public License, version 2 (GPLv2)**, which is the license of the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/COPYING) itself.
 
 If you have any doubts or require confirmation, it is recommended to contact the original authors of the patches (e.g., Goffredo Baroncelli or Kakra) for clarification.
 
