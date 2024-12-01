@@ -29,7 +29,7 @@ For an in-depth explanation of the patches, how they work, and real-world exampl
 ## Disclaimer
 These patches are experimental and not officially included in the Linux kernel. Use them at your own risk. Always ensure you have backups of your data before testing these patches in production environments.
 
-For questions or feedback, feel free to visit the wiki or reach out via [irc](https://wiki.tnonline.net/w/Btrfs/IRC).
+For questions or feedback, feel free to visit the wiki or reach out via [IRC](https://wiki.tnonline.net/w/Btrfs/IRC).
 
 ## License
 The licensing of these patches has not been explicitly stated in this repository. However, given their origin and intended use with the Linux kernel, they are likely under the terms of the **GNU General Public License, version 2 (GPLv2)**, which is the license of the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/COPYING) itself.
