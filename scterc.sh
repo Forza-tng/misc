@@ -23,13 +23,13 @@ for i in /dev/sd[a-z] ; do
 
 	# Attempt to set the SCTERC timeout to 7 seconds
 	output=$(smartctl -l scterc,$sct,$sct "$i" 2>&1)
-	
+
 	# Check the output for "SCT Commands not supported"
 	if echo "$output" | grep -q "SCT Commands not supported" ; then
 		echo $fallback > "/sys/block/${device}/device/timeout"
-		printf "%s is bad  " "$i"
+		printf "%s: no SCTERC support, using fallback.  " "$i"
 	else
-		printf "%s is good " "$i"
+		printf "%s: SCTERC set ok. " "$i"
 	fi
 
 	# Show device identification
