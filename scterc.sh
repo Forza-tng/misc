@@ -15,7 +15,7 @@
 # extended error recovery, improving reliability.
 #
 # set scterc < timeout <= eh_timeout for predictable and efficient error
-# handling
+# handling.
 ###
 
 sct=70           	# 70=7 seconds
