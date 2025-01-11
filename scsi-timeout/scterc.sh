@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ###
-# Set SAS and SATA SCT error timeout.
+# Set SCSI and SATA SCT error timeout.
 #
 # SPDX-License-Identifier: CC0-1.0
 ###
@@ -21,7 +21,7 @@
 # LUN, bus, or host resets) that could lead to data loss or filesystem
 # corruption. If SCTERC is not supported, setting a long "timeout"
 # helps prevent premature EH invocation.
-# 
+#
 # In Linux, the "timeout" value is how long the kernel waits for an
 # individual I/O command to complete before declaring it as failed and
 # invoking the SCSI Error Handler (EH). Once EH takes over, its
@@ -29,39 +29,58 @@
 # parameter defines how long the EH is allowed to try recovery
 # operations before escalating further or offlining the device.
 #
-# Some SMR (Shingeled Magnetic Recording) type harddisks are especially 
+# It is not uncommon to see I/O on normal HDDs taking more than
+# 30 seconds, the Linux default. To accommodate this, the script sets
+# the default "timeout" to 60 seconds for devices with SCTERC support.
+# For devices without SCTERC, the fallback timeout is set to 300 seconds.
+#
+# Some SMR (Shingled Magnetic Recording) type HDDs are especially
 # prone to trigger Linux I/O timeouts, as their internal garbage
 # collection can take several minutes to complete. You may need to
-# increase the fb_timeout on such devices.
+# increase the "sct_device_timeout" and "fallback_device_timeout" for
+# such devices.
 #
 # See the Linux documentation for SCSI error handling at:
 # https://www.kernel.org/doc/Documentation/scsi/scsi_eh.rst
 ###
 
-sct=70           	# 70=7 seconds
-sct_timeout=20   	# 20 seconds
-sct_eh_timeout=10	# 10 seconds
-fb_timeout=180   	# 180 seconds
-fb_eh_timeout=30	# 30 seconds
+scterc_value=70                 # SCTERC value in deciseconds (7 seconds)
+sct_device_timeout=60           # 60s for devices with SCTERC support
+sct_eh_recovery_timeout=10      # 10s for EH recovery with SCTERC
+fallback_device_timeout=300     # 300s for devices without SCTERC
+fallback_eh_recovery_timeout=30 # 30s for EH recovery without SCTERC
 
+# Print header
+printf "%-10s  %-40s  %-30s\n" "Device" "Model" "Status"
+echo "------------------------------------------------------------------"
+
+# Iterate over /dev/sd[a-z] to target standard SCSI/SATA devices. If you 
+# need to include other block devices (e.g., virtio disks: /dev/vd[a-z], 
+# Xen disks: /dev/xvd[a-z]), adjust the glob pattern accordingly. For 
+# systems with more than 26 SCSI devices, add additional patterns, such 
+# as: 
+# for i in /dev/sd[a-z] /dev/sda[a-z] ; do
 
 for i in /dev/sd[a-z] ; do
 	device=$(basename "$i")
 
 	# Attempt to set the SCTERC timeout to 7 seconds
-	output=$(smartctl -l scterc,$sct,$sct "$i" 2>&1)
+	output=$(smartctl -l scterc,$scterc_value,$scterc_value "$i" 2>&1)
+
+	# Get the device model
+	model=$(smartctl -i "$i" | grep -E "Device Model|Product:" | awk -F: '{print $2}' | xargs)
 
 	# Check the output for "SCT Commands not supported"
 	if echo "$output" | grep -q "SCT Commands not supported" ; then
-		printf "%s: no SCTERC support, using fallback.  " "$i"
-		echo $fb_timeout    > "/sys/block/${device}/device/timeout"
-		echo $fb_eh_timeout > "/sys/block/${device}/device/eh_timeout"
+		status="No SCTERC support, using fallback"
+		echo $fallback_device_timeout > "/sys/block/${device}/device/timeout"
+		echo $fallback_eh_recovery_timeout > "/sys/block/${device}/device/eh_timeout"
 	else
-		printf "%s: SCTERC set ok. " "$i"
-		echo $sct_timeout    > "/sys/block/${device}/device/timeout"
-		echo $sct_eh_timeout > "/sys/block/${device}/device/eh_timeout"
+		status="SCTERC set ok"
+		echo $sct_device_timeout > "/sys/block/${device}/device/timeout"
+		echo $sct_eh_recovery_timeout > "/sys/block/${device}/device/eh_timeout"
 	fi
 
-	# Show device identification
-	smartctl -i "$i" | grep -E "(Device Model|Product:)"
+	# Print the results
+	printf "%-10s  %-40s  %-30s\n" "$i" "$model" "$status"
 done
