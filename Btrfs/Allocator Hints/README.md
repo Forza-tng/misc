@@ -4,8 +4,10 @@ This repository contains patches for adding allocator hints to Btrfs. These patc
 ## About the Patches
 The allocator hints patches were initially proposed in a series of early submissions to the Linux Btrfs mailing list in 2022 by Goffredo Baroncelli. Since then, the patches have been maintained and updated by Kakra to ensure compatibility with newer kernels and to add fixes and enhancements.
 
+For an in-depth explanation of the patches, how they work, and real-world examples, visit the wiki page: [Btrfs/Allocator Hints](https://wiki.tnonline.net/w/Btrfs/Allocator_Hints)
+
 ### Available Versions
-The patches in this repository are named according to the kernel version they are designed for. For example:
+The patches in this repository are named according to the kernel version they are designed for.
 
 - **btrfs_allocator_hints-6.1.patch**: For kernel version 6.1
 - **btrfs_allocator_hints-6.6.patch**: For kernel version 6.6 (initial version)
@@ -13,6 +15,7 @@ The patches in this repository are named according to the kernel version they ar
 - **btrfs_allocator_hints-6.6_v3.patch**: Kernel version 6.6 with further tweaks
 - **btrfs_allocator_hints-6.6_v4.patch**: Latest patch for kernel version 6.6
 - **btrfs_allocator_hints-6.12_v1.patch**: For kernel version 6.12
+- **btrfs_allocator_hints-6.12_v2.patch**: Latest patch for kernel version 6.12
 
 Each patch is tailored to work with its respective kernel version. Ensure you match the patch version to your Linux kernel version to avoid compatibility issues.
 
@@ -23,13 +26,10 @@ You can find the original discussion about these patches on the Linux Btrfs mail
 This repository is a mirror of the patches that have been graciously compiled and maintained by Kakra. They are available on his GitHub page:
 [Kakra's GitHub Repository](https://github.com/kakra/linux/pull/36)
 
-### More Information
-For an in-depth explanation of the patches, how they work, and real-world examples, visit the wiki page: [Btrfs/Allocator Hints](https://wiki.tnonline.net/w/Btrfs/Allocator_Hints)
-
 ## Disclaimer
 These patches are experimental and not officially included in the Linux kernel. Use them at your own risk. Always ensure you have backups of your data before testing these patches in production environments.
 
-For questions or feedback, feel free to visit the wiki or reach out via [IRC](https://wiki.tnonline.net/w/Btrfs/IRC).
+For questions or feedback, feel free to visit the [wiki](https://wiki.tnonline.net/w/Btrfs/Allocator_Hints) or reach out via [IRC](https://wiki.tnonline.net/w/Btrfs/IRC).
 
 ## License
 The licensing of these patches has not been explicitly stated. However, given their origin and intended use with the Linux kernel, they are likely under the terms of the **GNU General Public License, version 2 (GPLv2)**, which is the license of the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/COPYING) itself.
