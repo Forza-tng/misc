@@ -15,7 +15,8 @@ The patches in this repository are named according to the kernel version they ar
 - **btrfs_allocator_hints-6.6_v3.patch**: Kernel version 6.6 with further tweaks
 - **btrfs_allocator_hints-6.6_v4.patch**: Latest patch for kernel version 6.6
 - **btrfs_allocator_hints-6.12_v1.patch**: For kernel version 6.12
-- **btrfs_allocator_hints-6.12_v2.patch**: Latest patch for kernel version 6.12
+- **btrfs_allocator_hints-6.12_v2.patch**: Second iteration for kernel version 6.12
+- **btrfs_allocator_hints-6.12_v3.patch**: Latest patch for kernel version 6.12 with RAID1 read balance policy
 
 Each patch is tailored to work with its respective kernel version. Ensure you match the patch version to your Linux kernel version to avoid compatibility issues.
 
