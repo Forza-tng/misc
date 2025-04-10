@@ -1719,7 +1719,7 @@ index c2f235a02a79ea..63384cd731ded2 100644
  	return ret_stripe;
  }
 
-From 4426a9c7d82f8f100a90e1288b928d26e4c6560d Mon Sep 17 00:00:00 2001
+From 94151649cd64b5a1270ca98ae192e0fcd9c5c59d Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Wed, 9 Apr 2025 15:35:26 +0200
 Subject: [PATCH 21/22] btrfs: add filtering by latency to btrfs_read_rr
@@ -1734,7 +1734,7 @@ Signed-off-by: Kai Krakow <kai@kaishome.de>
  1 file changed, 27 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 63384cd731ded2..2215287a0630ab 100644
+index 63384cd731ded2..40a7d860769f6b 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -6090,7 +6090,8 @@ static int btrfs_cmp_devid(const void *a, const void *b)
@@ -1777,7 +1777,7 @@ index 63384cd731ded2..2215287a0630ab 100644
 +	/* if the caller passed a minimum latency and we filtered for no
 +	 * stripes, return -1 to indicate that no stripe qualified.
 +	 */
-+	if (min_latency && !index)
++	if (unlikely(min_latency && !index))
 +		return -1;
 +
  	sort(stripes, index, sizeof(struct stripe_mirror),
@@ -1793,7 +1793,7 @@ index 63384cd731ded2..2215287a0630ab 100644
  	case BTRFS_READ_POLICY_DEVID:
  		preferred_mirror = btrfs_read_preferred(map, first, num_stripes);
 
-From f1d74977bd791df8df7d07762830c256ab9c340c Mon Sep 17 00:00:00 2001
+From e51ca315aea0ef47733cb9ba59edd415cdb44aef Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Wed, 9 Apr 2025 15:59:59 +0200
 Subject: [PATCH 22/22] btrfs: add hybrid latency-rr read policy
@@ -1855,7 +1855,7 @@ index fd096b83bb6c45..2014475af9716e 100644
  			u32 sectorsize = fs_devices->fs_info->sectorsize;
  
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2215287a0630ab..24ab30b17b9d8a 100644
+index 40a7d860769f6b..17c5728e5cca59 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -6143,6 +6143,40 @@ static int btrfs_read_rr(struct btrfs_chunk_map *map, int first, int num_stripes
@@ -1891,7 +1891,7 @@ index 2215287a0630ab..24ab30b17b9d8a 100644
 +		ret_stripe = btrfs_read_rr(map, first, num_stripes, min_latency);
 +	}
 +
-+	if (ret_stripe < 0)
++	if (unlikely(ret_stripe < 0))
 +		ret_stripe = btrfs_read_rr(map, first, num_stripes, 0);
 +
 +	return ret_stripe;
