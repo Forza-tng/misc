@@ -1,7 +1,7 @@
 From 5e49c78f38cc7f5b7ec012021c8422c1db98ef7e Mon Sep 17 00:00:00 2001
 From: Goffredo Baroncelli <kreijack@inwind.it>
 Date: Sun, 24 Oct 2021 17:31:04 +0200
-Subject: [PATCH 01/26] btrfs: add flags to give an hint to the chunk allocator
+Subject: [PATCH 01/27] btrfs: add flags to give an hint to the chunk allocator
 
 Add the following flags to give an hint about which chunk should be
 allocated in which a disk.
@@ -50,7 +50,7 @@ index fc29d273845d84..71c6135dc7cfb2 100644
 From 160344ae9ae37b32593adc43716172c37b0a734c Mon Sep 17 00:00:00 2001
 From: Goffredo Baroncelli <kreijack@inwind.it>
 Date: Sun, 24 Oct 2021 17:31:05 +0200
-Subject: [PATCH 02/26] btrfs: export dev_item.type in
+Subject: [PATCH 02/27] btrfs: export dev_item.type in
  /sys/fs/btrfs/<uuid>/devinfo/<devid>/type
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
@@ -91,7 +91,7 @@ index 03926ad467c919..fe07a7cbcf74c4 100644
 From 29637f2e3a69fe77a8097bd772a8a7803b9ec576 Mon Sep 17 00:00:00 2001
 From: Goffredo Baroncelli <kreijack@inwind.it>
 Date: Sun, 24 Oct 2021 17:31:06 +0200
-Subject: [PATCH 03/26] btrfs: change the DEV_ITEM 'type' field via sysfs
+Subject: [PATCH 03/27] btrfs: change the DEV_ITEM 'type' field via sysfs
 
 Signed-off-by: Kai Krakow <kai@kaishome.de>
 ---
@@ -197,7 +197,7 @@ index 4481575dd70f35..7bb14d51bffc58 100644
 From 970b99e160487e9765b6e7db9f8a89a96ce79811 Mon Sep 17 00:00:00 2001
 From: Goffredo Baroncelli <kreijack@inwind.it>
 Date: Sun, 24 Oct 2021 17:31:07 +0200
-Subject: [PATCH 04/26] btrfs: add allocator_hint mode
+Subject: [PATCH 04/27] btrfs: add allocator_hint mode
 
 When this mode is enabled, the chunk allocation policy is modified as
 follow.
@@ -388,7 +388,7 @@ index 7bb14d51bffc58..f3c5437e270a22 100644
 From 1c1f2e27d3055b7721468c6980479a043f48e2b3 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kk@netactive.de>
 Date: Thu, 27 Jun 2024 20:05:58 +0200
-Subject: [PATCH 05/26] btrfs: add allocator_hint for no allocation preferred
+Subject: [PATCH 05/27] btrfs: add allocator_hint for no allocation preferred
 
 This is useful where you want to prevent new allocations of chunks on a
 disk which is going to removed from the pool anyways, e.g. due to bad
@@ -441,7 +441,7 @@ index 71c6135dc7cfb2..92bcc59b129a97 100644
 From 82553effe6b655f97478b6d13df7ab0ecc192e58 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Fri, 6 Dec 2024 00:55:31 +0100
-Subject: [PATCH 06/26] btrfs: add allocator_hint to disable allocation
+Subject: [PATCH 06/27] btrfs: add allocator_hint to disable allocation
  completely
 
 This is useful where you want to prevent new allocations of chunks to
@@ -516,7 +516,7 @@ index 92bcc59b129a97..3db20734aacfc6 100644
 From 10248db4c682397c83b99daa2de4ee0e587c0be2 Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:31 +0800
-Subject: [PATCH 07/26] btrfs: simplify output formatting in
+Subject: [PATCH 07/27] btrfs: simplify output formatting in
  btrfs_read_policy_show
 
 Refactor the logic in btrfs_read_policy_show() to streamline the
@@ -562,7 +562,7 @@ index 3675d961b39a2a..cde47f1c11757f 100644
 From 4a49a279c14d9003fd7d4865706bc78142bf1645 Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:30 +0800
-Subject: [PATCH 08/26] btrfs: initialize fs_devices->fs_info earlier
+Subject: [PATCH 08/27] btrfs: initialize fs_devices->fs_info earlier
 
 Currently, fs_devices->fs_info is initialized in btrfs_init_devices_late(),
 but this occurs too late for find_live_mirror(), which is invoked by
@@ -606,7 +606,7 @@ index 99d2c60ac2bf3e..21cc02df8edf06 100644
 From ccb29226710d52abbd737fd0b2f438022c045af4 Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:32 +0800
-Subject: [PATCH 09/26] btrfs: add btrfs_read_policy_to_enum helper and
+Subject: [PATCH 09/27] btrfs: add btrfs_read_policy_to_enum helper and
  refactor read policy store
 
 Introduce the `btrfs_read_policy_to_enum` helper function to simplify the
@@ -683,7 +683,7 @@ index cde47f1c11757f..8540af0807648e 100644
 From cf73e9084375ab73182d3a2d510e878a137a9664 Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:34 +0800
-Subject: [PATCH 10/26] btrfs: add tracking of read blocks for read policy
+Subject: [PATCH 10/27] btrfs: add tracking of read blocks for read policy
 
 Add fs_devices::read_cnt_blocks to track read blocks, initialize it in
 open_fs_devices() and clean it up in close_fs_devices().
@@ -801,7 +801,7 @@ index f3c5437e270a22..91a2358b74c91f 100644
 From 7070070e90e889d165590aa05f02e671d041d12c Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Mon, 16 Sep 2024 18:18:25 +0930
-Subject: [PATCH 11/26] btrfs: introduce CONFIG_BTRFS_EXPERIMENTAL from 6.13
+Subject: [PATCH 11/27] btrfs: introduce CONFIG_BTRFS_EXPERIMENTAL from 6.13
 
 CONFIG_BTRFS_EXPERIMENTAL is needed by the RAID1 balancing patches but
 we don't want to use the full scope of the 6.13 patch because it also
@@ -838,7 +838,7 @@ index 4fb925e8c981d8..ead317f1eeb859 100644
 From 3efa6c755e4ae0dc36f606b329b10587f24dcab3 Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:33 +0800
-Subject: [PATCH 12/26] btrfs: handle value associated with read policy
+Subject: [PATCH 12/27] btrfs: handle value associated with read policy
  parameter
 
 This change enables specifying additional configuration values alongside
@@ -901,7 +901,7 @@ index 8540af0807648e..b0e624c0598f48 100644
 From 687cdc03a694afb2236c7c87de458c519be771ea Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:35 +0800
-Subject: [PATCH 13/26] btrfs: introduce round-robin read policy
+Subject: [PATCH 13/27] btrfs: introduce round-robin read policy
 
 This feature balances I/O across the striped devices when reading from
 mirrored blocks.
@@ -1130,7 +1130,7 @@ index 91a2358b74c91f..65d56bffc6ef8b 100644
 From 328002ad27e90dc8ff6b7c2022711b6f0df74a01 Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:36 +0800
-Subject: [PATCH 14/26] btrfs: add RAID1 preferred read device
+Subject: [PATCH 14/27] btrfs: add RAID1 preferred read device
 
 When there's stale data on a mirrored device, this feature lets you choose
 which device to read from. Mainly used for testing.
@@ -1276,7 +1276,7 @@ index 65d56bffc6ef8b..d8075ad17a6d3a 100644
 From 5084cf69a0e706dfcae5e594d915e46a124fb25c Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:37 +0800
-Subject: [PATCH 15/26] btrfs: expose experimental mode in module information
+Subject: [PATCH 15/27] btrfs: expose experimental mode in module information
 
 Commit c9c49e8f157e ("btrfs: split out CONFIG_BTRFS_EXPERIMENTAL from
 CONFIG_BTRFS_DEBUG") introduces a way to enable or disable experimental
@@ -1307,7 +1307,7 @@ index c64d0713412231..4742bb2af601a7 100644
 From fd9d23cf84c07baec0ba5d4bbd9ecd4c0e671e47 Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:38 +0800
-Subject: [PATCH 16/26] btrfs: enable read policy configuration via modprobe
+Subject: [PATCH 16/27] btrfs: enable read policy configuration via modprobe
  parameter
 
 This update allows configuring the `read_policy` methods using a
@@ -1454,7 +1454,7 @@ index a2a0af8f6a9f94..f61844fc2da9ab 100644
 From 77f79e1f0d91253b9a2aa0ff975bf34ecf3d243e Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Thu, 2 Jan 2025 02:06:39 +0800
-Subject: [PATCH 17/26] btrfs: modload to print read policy status
+Subject: [PATCH 17/27] btrfs: modload to print read policy status
 
 Modified the Btrfs loading message to include the read policy status
 if the experimental feature is enabled.
@@ -1490,7 +1490,7 @@ index 448db8974cda70..ea5ff01881d706 100644
 From ea9e632401927e9c38ae4b3e505fff377535f58b Mon Sep 17 00:00:00 2001
 From: Anand Jain <anand.jain@oracle.com>
 Date: Fri, 11 Oct 2024 10:49:17 +0800
-Subject: [PATCH 18/26] btrfs: use the path with the lowest latency for RAID1
+Subject: [PATCH 18/27] btrfs: use the path with the lowest latency for RAID1
  reads
 
 This feature aims to direct the read I/O to the device with the lowest
@@ -1605,7 +1605,7 @@ index d8075ad17a6d3a..6c1f219f83b388 100644
 From 680350c9732c58e321968974868836bf13ec5c96 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Wed, 9 Apr 2025 14:07:18 +0200
-Subject: [PATCH 19/26] btrfs: move latency-based selection into helper
+Subject: [PATCH 19/27] btrfs: move latency-based selection into helper
 
 Signed-off-by: Kai Krakow <kai@kaishome.de>
 ---
@@ -1688,7 +1688,7 @@ index a36c2bfa339785..c2f235a02a79ea 100644
 From 1f255624630f889fbd9e268b8d7a77f5ed68fa8c Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Wed, 9 Apr 2025 15:21:14 +0200
-Subject: [PATCH 20/26] btrfs: fix btrfs_read_rr to use the actual number of
+Subject: [PATCH 20/27] btrfs: fix btrfs_read_rr to use the actual number of
  stripes
 
 While num_stripes is identical to index at the end of the loop, index
@@ -1722,7 +1722,7 @@ index c2f235a02a79ea..63384cd731ded2 100644
 From c26c5bdfbeea36dd89fcbefe1c86561a5113869a Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Tue, 15 Apr 2025 09:04:57 +0200
-Subject: [PATCH 21/26] btrfs: create a helper instead of open coding device
+Subject: [PATCH 21/27] btrfs: create a helper instead of open coding device
  latency calculation
 
 Signed-off-by: Kai Krakow <kai@kaishome.de>
@@ -1797,7 +1797,7 @@ index 63384cd731ded2..14baa1b391a936 100644
 From e54bf3f05a0c202c8637206b9a4bb03b1e5fe42f Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Tue, 15 Apr 2025 01:28:06 +0200
-Subject: [PATCH 22/26] btrfs: add filtering by latency to btrfs_read_rr
+Subject: [PATCH 22/27] btrfs: add filtering by latency to btrfs_read_rr
 
 This introduces a new parameter to btrfs_read_rr to select whether we
 filter for latency. In case the caller passes latency, we return -1 if
@@ -1858,21 +1858,21 @@ index 14baa1b391a936..ff6fd21aaa3226 100644
  	case BTRFS_READ_POLICY_DEVID:
  		preferred_mirror = btrfs_read_preferred(map, first, num_stripes);
 
-From 5eb1ebc30e9487b43e55604c139caffcaf4779cd Mon Sep 17 00:00:00 2001
+From b606dcc6ff4a175a3e80a17bb9a85f85a0c9ec03 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
-Date: Wed, 9 Apr 2025 15:59:59 +0200
-Subject: [PATCH 23/26] btrfs: add hybrid latency-rr read policy
+Date: Fri, 18 Apr 2025 23:31:04 +0200
+Subject: [PATCH 23/27] btrfs: add hybrid latency-rr read policy
 
 This mode combines latency and round-robin modes by considering all
-stripes within 120% of the minimum latency. It falls back to round-robin
+stripes within 125% of the minimum latency. It falls back to round-robin
 if all stripes have no latency recorded yet.
 
 Signed-off-by: Kai Krakow <kai@kaishome.de>
 ---
  fs/btrfs/sysfs.c   | 13 +++++++++++--
- fs/btrfs/volumes.c | 38 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c | 40 ++++++++++++++++++++++++++++++++++++++++
  fs/btrfs/volumes.h |  2 ++
- 3 files changed, 51 insertions(+), 2 deletions(-)
+ 3 files changed, 53 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
 index fd096b83bb6c45..2014475af9716e 100644
@@ -1920,10 +1920,10 @@ index fd096b83bb6c45..2014475af9716e 100644
  			u32 sectorsize = fs_devices->fs_info->sectorsize;
  
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ff6fd21aaa3226..f3fa68aa7fa446 100644
+index ff6fd21aaa3226..e96201d8f8e3a3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6137,6 +6137,40 @@ static int btrfs_read_rr(struct btrfs_chunk_map *map, int first, int num_stripes
+@@ -6137,6 +6137,42 @@ static int btrfs_read_rr(struct btrfs_chunk_map *map, int first, int num_stripes
  
  	return ret_stripe;
  }
@@ -1944,18 +1944,20 @@ index ff6fd21aaa3226..f3fa68aa7fa446 100644
 +	u64 min_latency;
 +	int ret_stripe = -1;
 +
++	/* find the lowest latency of all stripes first */
 +	btrfs_best_stripe(fs_info, map, first, num_stripes, &min_latency,
 +	                     &ret_stripe);
 +
 +	/* min_latency will be 0 if no latency has been recorded yet,
-+	 * add 20% headroom otherwise.
++	 * add 25% headroom otherwise, and round-robin among the fast
++	 * stripes only.
 +	 */
 +	if (likely(min_latency)) {
-+		min_latency = min_latency * 6;
-+		min_latency = div_u64(min_latency, 5);
++		min_latency += (min_latency >> 2);
 +		ret_stripe = btrfs_read_rr(map, first, num_stripes, min_latency);
 +	}
 +
++	/* retry with default round-robin if no stripe has been found */
 +	if (unlikely(ret_stripe < 0))
 +		ret_stripe = btrfs_read_rr(map, first, num_stripes, 0);
 +
@@ -1964,7 +1966,7 @@ index ff6fd21aaa3226..f3fa68aa7fa446 100644
  #endif
  
  static int find_live_mirror(struct btrfs_fs_info *fs_info,
-@@ -6179,6 +6213,10 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+@@ -6179,6 +6215,10 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
  		preferred_mirror = btrfs_read_fastest(fs_info, map, first,
  								num_stripes);
  		break;
@@ -1989,10 +1991,10 @@ index 6c1f219f83b388..a6e8a722d9c742 100644
  	BTRFS_READ_POLICY_DEVID,
  #endif
 
-From ef03ef7752a8d68310c1d31fdfad2f295c70a46d Mon Sep 17 00:00:00 2001
+From 5f850824c0b496809d10b8c217c1f347f2f6377e Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Wed, 16 Apr 2025 22:06:37 +0200
-Subject: [PATCH 24/26] btrfs: add devinfo read stats to sysfs
+Subject: [PATCH 24/27] btrfs: add devinfo read stats to sysfs
 
 Signed-off-by: Kai Krakow <kai@kaishome.de>
 ---
@@ -2048,10 +2050,10 @@ index 2014475af9716e..d629ececa0b65e 100644
  	BTRFS_ATTR_PTR(devid, fsid),
  	BTRFS_ATTR_PTR(devid, in_fs_metadata),
 
-From a95354ce074f5e9ff53cc931044d2c224c204d32 Mon Sep 17 00:00:00 2001
+From 127de63e502294bc6c27a9ae54208481a9b0cb51 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Wed, 16 Apr 2025 22:52:14 +0200
-Subject: [PATCH 25/26] btrfs: add last IO age to sysfs read_stats
+Subject: [PATCH 25/27] btrfs: add last IO age to sysfs read_stats
 
 Each time a stripe is going to be selected, increase a counter in each
 possible stripe. After selecting a stripe, reset the counter to zero.
@@ -2082,10 +2084,10 @@ index d629ececa0b65e..0d87f4d13c1375 100644
  BTRFS_ATTR(devid, read_stats, btrfs_devinfo_read_stats_show);
  #endif
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f3fa68aa7fa446..21bcc8529664d8 100644
+index e96201d8f8e3a3..59bc6fa8b68e40 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6192,6 +6192,13 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+@@ -6194,6 +6194,13 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
  	else
  		num_stripes = map->num_stripes;
  
@@ -2099,7 +2101,7 @@ index f3fa68aa7fa446..21bcc8529664d8 100644
  	switch (policy) {
  	default:
  		/* Shouldn't happen, just warn and use pid instead of failing */
-@@ -6235,14 +6242,22 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+@@ -6237,14 +6244,22 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
  	for (tolerance = 0; tolerance < 2; tolerance++) {
  		if (map->stripes[preferred_mirror].dev->bdev &&
  		    (tolerance || map->stripes[preferred_mirror].dev != srcdev))
@@ -2142,10 +2144,10 @@ index a6e8a722d9c742..f2807a7463bf17 100644
  
  /*
 
-From 8adf66f59b2836c78db1f50c74f76b783764e84b Mon Sep 17 00:00:00 2001
+From 911a9ed3b04a378537f16669676cfea6a557ec57 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Thu, 17 Apr 2025 00:26:03 +0200
-Subject: [PATCH 26/26] btrfs: Probe read latency if device is 1000 IOs behind
+Subject: [PATCH 26/27] btrfs: probe read latency if device is 1000 IOs behind
  its siblings
 
 This should solve a problem where devices get "frozen" if their read
@@ -2157,7 +2159,7 @@ Signed-off-by: Kai Krakow <kai@kaishome.de>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 21bcc8529664d8..6b1aededbb1505 100644
+index 59bc6fa8b68e40..124fac989a2541 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -6013,13 +6013,16 @@ static int btrfs_read_preferred(struct btrfs_chunk_map *map, int first,
@@ -2178,3 +2180,82 @@ index 21bcc8529664d8..6b1aededbb1505 100644
  		avg_wait = div_u64(read_wait, read_ios);
  
  	return avg_wait;
+
+From 7c11b64d08d6b1a79ba2af5167330d63a392ac18 Mon Sep 17 00:00:00 2001
+From: Kai Krakow <kai@kaishome.de>
+Date: Thu, 17 Apr 2025 23:59:58 +0200
+Subject: [PATCH 27/27] btrfs: allow a short burst of IO for probing read
+ latency
+
+If we do a probe to detect the current read latency of the device,
+allow a short burst of IO so we don't just do single IO requests which
+are probably not a realistic measurement anyways and won't have any
+useful impact on the cumulative average.
+
+Tests show that this returns device to their expected average latency
+performance after some hours after a latency spike, and allows them to
+become part of the round-robin again.
+
+Signed-off-by: Kai Krakow <kai@kaishome.de>
+---
+ fs/btrfs/sysfs.c   |  4 ++--
+ fs/btrfs/volumes.c | 16 ++++++++++++++--
+ 2 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 0d87f4d13c1375..fd4583b8b27a56 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -2192,9 +2192,9 @@ static ssize_t btrfs_devinfo_read_stats_show(struct kobject *kobj,
+ 	if (read_wait && read_ios && read_wait >= read_ios)
+ 		avg_wait = div_u64(read_wait, read_ios);
+ 
+-	return scnprintf(buf, PAGE_SIZE, "ios %lu wait %llu avg %llu age %llu\n",
++	return scnprintf(buf, PAGE_SIZE, "ios %lu wait %llu avg %llu age %lld\n",
+ 	                 read_ios, read_wait, avg_wait,
+-	                 (u64)atomic64_read(&device->last_io_age));
++	                 atomic64_read(&device->last_io_age));
+ }
+ BTRFS_ATTR(devid, read_stats, btrfs_devinfo_read_stats_show);
+ #endif
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 124fac989a2541..070e26fda91f8a 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6021,7 +6021,7 @@ static u64 btrfs_device_read_latency(struct btrfs_device *device)
+ 	u64 last_io_age = (u64)atomic64_read(&device->last_io_age);
+ 	u64 avg_wait = 0;
+ 
+-	if (last_io_age < BTRFS_MAX_AGE_FOR_VALID_LATENCY
++	if (last_io_age >= 0 && last_io_age < BTRFS_MAX_AGE_FOR_VALID_LATENCY
+ 	    && read_wait && read_ios && read_wait >= read_ios)
+ 		avg_wait = div_u64(read_wait, read_ios);
+ 
+@@ -6178,6 +6178,7 @@ static int btrfs_read_fastest_rr(struct btrfs_fs_info *fs_info,
+ }
+ #endif
+ 
++#define BTRFS_OLD_AGE_IO_BURST 20
+ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_chunk_map *map, int first,
+ 			    int dev_replace_is_ongoing)
+@@ -6260,7 +6261,18 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ out:
+ #ifdef CONFIG_BTRFS_EXPERIMENTAL
+ 	/* reset age of selected stripe */
+-	atomic64_set(&map->stripes[preferred_mirror].dev->last_io_age, 0);
++	s64 current_age, new_age;
++	do {
++		current_age = atomic64_read(&map->stripes[preferred_mirror].dev->last_io_age);
++
++		if (current_age >= BTRFS_MAX_AGE_FOR_VALID_LATENCY) {
++			new_age = -BTRFS_OLD_AGE_IO_BURST;
++		} else if (current_age >= 0) {
++			new_age = 0;
++		} else {
++			return preferred_mirror;
++		}
++	} while (unlikely(atomic64_cmpxchg(&map->stripes[preferred_mirror].dev->last_io_age, current_age, new_age) != current_age));
+ #endif
+ 
+ 	/* we couldn't find one that doesn't fail.  Just return something
