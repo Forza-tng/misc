@@ -44,6 +44,8 @@
 # https://www.kernel.org/doc/Documentation/scsi/scsi_eh.rst
 ###
 
+set -eu
+
 scterc_value=70                 # SCTERC value in deciseconds (7 seconds)
 sct_device_timeout=60           # 60s for devices with SCTERC support
 sct_eh_recovery_timeout=10      # 10s for EH recovery with SCTERC
@@ -54,33 +56,30 @@ fallback_eh_recovery_timeout=30 # 30s for EH recovery without SCTERC
 printf "%-10s  %-40s  %-30s\n" "Device" "Model" "Status"
 echo "------------------------------------------------------------------"
 
-# Iterate over /dev/sd[a-z] to target standard SCSI/SATA devices. If you 
-# need to include other block devices (e.g., virtio disks: /dev/vd[a-z], 
-# Xen disks: /dev/xvd[a-z]), adjust the glob pattern accordingly. For 
-# systems with more than 26 SCSI devices, add additional patterns, such 
-# as: 
-# for i in /dev/sd[a-z] /dev/sda[a-z] ; do
+# Iterate over block devices under /sys/block/sd*
+for sysblk in /sys/block/sd*; do
+	[ -d "$sysblk" ] || continue
+	device=$(basename "$sysblk")
+	devpath="/dev/$device"
+	[ -b "$devpath" ] || continue
 
-for i in /dev/sd[a-z] ; do
-	device=$(basename "$i")
-
-	# Attempt to set the SCTERC timeout to 7 seconds
-	output=$(smartctl -l scterc,$scterc_value,$scterc_value "$i" 2>&1)
+	# Attempt to set the SCTERC timeout
+	output=$(smartctl -l scterc,$scterc_value,$scterc_value "$devpath" 2>&1 || true)
 
 	# Get the device model
-	model=$(smartctl -i "$i" | grep -E "Device Model|Product:" | awk -F: '{print $2}' | xargs)
+	model=$(smartctl -i "$devpath" | grep -E "Device Model|Product:" | awk -F: '{print $2}' | xargs || echo "unknown")
 
 	# Check the output for "SCT Commands not supported"
 	if echo "$output" | grep -q "SCT Commands not supported" ; then
 		status="No SCTERC support, using fallback"
-		echo $fallback_device_timeout > "/sys/block/${device}/device/timeout"
-		echo $fallback_eh_recovery_timeout > "/sys/block/${device}/device/eh_timeout"
+		echo "$fallback_device_timeout" > "/sys/block/${device}/device/timeout"
+		echo "$fallback_eh_recovery_timeout" > "/sys/block/${device}/device/eh_timeout"
 	else
 		status="SCTERC set ok"
-		echo $sct_device_timeout > "/sys/block/${device}/device/timeout"
-		echo $sct_eh_recovery_timeout > "/sys/block/${device}/device/eh_timeout"
+		echo "$sct_device_timeout" > "/sys/block/${device}/device/timeout"
+		echo "$sct_eh_recovery_timeout" > "/sys/block/${device}/device/eh_timeout"
 	fi
 
 	# Print the results
-	printf "%-10s  %-40s  %-30s\n" "$i" "$model" "$status"
+	printf "%-10s  %-40s  %-30s\n" "$devpath" "$model" "$status"
 done
