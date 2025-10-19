@@ -191,7 +191,7 @@ mapfile -t SZ <<< "$(
 		# Remove unit (kB) convert to bytes
 		size_kb="${size_label%kB}"
 		bytes=$(( size_kb * 1024 ))
-		
+
 		# Output: bytes<TAB>human_label<TAB>directory
 		printf "%d\t%sk\t%s\n" "$bytes" "$size_kb" "$dir"
 	done | sort -n -k1,1
@@ -231,7 +231,7 @@ done
 if (( VERBOSE )); then
     line
     printf "Legend: alloc=anon_fault_alloc  fb=anon_fault_fallback  succ=alloc/(alloc+fb)\n"
-    printf "        nr=nr_anon  nr_bytes=nr×page_size\n"
+    printf "        nr=nr_anon  nr_bytes=nr*page_size\n"
     printf "        sh_al=shmem_alloc  sh_fb=shmem_fallback\n"
     printf "        splits=split  sp_def=split_deferred\n"
 fi
