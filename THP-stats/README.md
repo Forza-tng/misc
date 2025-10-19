@@ -9,14 +9,13 @@ It collects data from `/sys/kernel/mm/transparent_hugepage/` and `/proc/meminfo`
 - Prints the current THP policy and configuration
 - Summarises `khugepaged` background activity
 - Displays a per-size breakdown of hugepage allocation and usage
-- Shows total THP-backed memory and its share of system RAM
-- Optional verbose explanations for each metric
+- Optional verbose explanations
 
 ## Usage
 
 ```bash
-./thp-stats.sh              # Default concise output
-./thp-stats.sh -v           # Verbose mode with explanations
+./thp-stats.sh      # Default concise output
+./thp-stats.sh -v   # Verbose mode with explanations
 ```
 
 ## Example output
@@ -46,6 +45,6 @@ THP / RAM        2.01 GiB / 30.72 GiB (6.6%)
 
 ## License
 
-This script is released under the CC0 1.0 Universal (Public Domain Dedication).
+This script is released under the [CC0 1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/).
 
 You are free to copy, modify, and distribute it, with or without attribution.
