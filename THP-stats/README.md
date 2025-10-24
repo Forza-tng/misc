@@ -8,8 +8,7 @@ It collects data from `/sys/kernel/mm/transparent_hugepage/` and `/proc/meminfo`
 
 - Prints the current THP policy and configuration
 - Summarises `khugepaged` background activity
-- Displays a per-size breakdown of hugepage allocation and usage
-- Optional verbose explanations
+- Displays a per-size breakdown of THP allocation and usage
 
 ## Usage
 
@@ -21,25 +20,26 @@ It collects data from `/sys/kernel/mm/transparent_hugepage/` and `/proc/meminfo`
 ## Example output
 
 ```
+Allocated THP pages
 -----------------------------------------------------------------------------------
 size      alloc       fb   succ     nr   nr_bytes   sh_al   sh_fb   splits   sp_def
 -----------------------------------------------------------------------------------
 8k            0        0   0.0%      0        0 B       0       0        0        0
-16k       6.43M       16 100.0%   1052  16.44 MiB       0       0   57.79k  368.23k
-32k       5.18M        1 100.0%    396  12.38 MiB       0       0   45.49k  302.23k
-64k       8.36M  118.58k  98.6%    249  15.56 MiB       0       0  178.22k  622.74k
-128k      1.92M        0 100.0%     78   9.75 MiB       0       0   33.43k  317.87k
-256k      1.47M  230.71k  86.4%     40  10.00 MiB       0       0   86.99k  125.62k
-512k    409.44k    2.61k  99.4%     27  13.50 MiB       0       0   14.44k   22.09k
-1024k   466.66k  196.65k  70.4%     10  10.00 MiB       0       0   30.44k   41.38k
-2048k   710.35k  172.90k  80.4%   1133   2.21 GiB  33.47k     323    1.56k    4.44k
+16k      39.08M      126 100.0%    895  13.98 MiB       0       0  459.09k    2.43M
+32k      32.45M   11.44k 100.0%    431  13.47 MiB       2       0  340.14k    2.15M
+64k      34.89M  135.47k  99.6%    288  18.00 MiB       1       0  564.19k    3.07M
+128k     12.73M   17.11k  99.9%     74   9.25 MiB       0       0  281.22k    2.12M
+256k      4.63M  250.19k  94.9%     22   5.50 MiB       1       0  206.17k  402.99k
+512k      2.38M   25.45k  98.9%     17   8.50 MiB       0       0   74.86k  129.14k
+1024k     2.22M  218.86k  91.0%     12  12.00 MiB      34       0  173.63k  206.35k
+2048k     5.76M  427.17k  93.1%    790   1.54 GiB 301.47k   6.73k   44.93k   28.18k
 
-Current THP-backed memory
+In-use THP-backed memory
 -----------------------------------------------------------------------------------
-AnonHugePages    1.96 GiB
-ShmemHugePages  56.00 MiB
+AnonHugePages    1.42 GiB
+ShmemHugePages 226.00 MiB
 FileHugePages         0 B
-THP / RAM        2.01 GiB / 30.72 GiB (6.6%)
+THP / Used RAM   1.64 GiB / 9.34 GiB (17.6%)
 -----------------------------------------------------------------------------------
 ```
 
