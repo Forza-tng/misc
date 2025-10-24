@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # thp-stats.sh — Transparent Hugepage statistics
+#
 # SPDX-License-Identifier: CC0-1.0
 #
 # CC0 1.0 Universal (Public Domain Dedication)
@@ -51,7 +52,7 @@ meminfo_val() {
 	echo "${val:-0}"
 }
 
-page_sz() {
+page_size() {
 	# System page size in bytes. Fall back to 4096.
 	local sz
 	sz="$(getconf PAGESIZE 2>/dev/null || getconf PAGE_SIZE 2>/dev/null || true)"
@@ -59,36 +60,6 @@ page_sz() {
 		echo "$sz"; return 0
 	fi
 	echo 4096
-}
-
-sys_mem() {
-	# Return total physical memory in bytes.
-	local pages psize total_kb total_bytes
-
-	pages="$(getconf _PHYS_PAGES 2>/dev/null || echo 0)"
-	psize="$(page_sz)"
-
-	if [[ "$pages" =~ ^[0-9]+$ ]] && [ "$pages" -gt 0 ]; then
-		echo $(( pages * psize ))
-		return
-	fi
-
-	# Fallback: /proc/meminfo
-	total_kb="$(meminfo_val MemTotal)"
-	if [[ "$total_kb" =~ ^[0-9]+$ ]] && [ "$total_kb" -gt 0 ]; then
-		echo $(( total_kb * 1024 ))
-		return
-	fi
-
-	# Fallback: parse `free` command
-	total_kb="$(LANG=C free 2>/dev/null | awk '/^Mem:/ {print $2}' | head -n1)"
-	if [[ "$total_kb" =~ ^[0-9]+$ ]] && [ "$total_kb" -gt 0 ]; then
-		echo $(( total_kb * 1024 ))
-		return
-	fi
-
-	# Final fallback
-	echo 0
 }
 
 read_file() { [[ -r "$1" ]] && tr -d '\n' <"$1" || true; }
@@ -129,11 +100,10 @@ bytes_h() {
 }
 kb_h() {
     # Convert KiB into IEC units.
-    bytes_h "$(( ${1:-0} * 1024 ))";
+    bytes_h "$(( ${1:-0} * 1024 ))"
 }
 
-PAGE_SIZE="$(page_sz)"
-SYS_MEM="$(sys_mem)"
+PAGE_SIZE="$(page_size)"
 
 line(){ printf '%s\n' "-----------------------------------------------------------------------------------"; }
 
@@ -161,7 +131,7 @@ if (( VERBOSE )); then
 	for key in full_scans pages_collapsed pages_to_scan scan_sleep_millisecs \
 	           alloc_sleep_millisecs defrag max_ptes_none max_ptes_shared max_ptes_swap; do
 		if [[ $key = "pages_to_scan" ]]; then
-			printf "%-22s %s\n" "$key" "$(read_file "$kp_dir/$key") ($(bytes_h $(( $(read_file "$kp_dir/$key")*$PAGE_SIZE)) ))"
+			printf "%-22s %s\n" "$key" "$(read_file "$kp_dir/$key") ($(bytes_h $(( $(read_file "$kp_dir/$key") * PAGE_SIZE )) ))"
 		else
 			printf "%-22s %s\n" "$key" "$(read_file "$kp_dir/$key")"
 		fi
@@ -172,9 +142,9 @@ fi
 ###
 # Per-size table
 ###
-
-printf "\n"
+printf "\nAllocated THP pages\n"
 line
+
 printf "%-6s %8s %8s %6s %6s %10s %7s %7s %8s %8s\n" \
 	"size" "alloc" "fb" "succ" "nr" "nr_bytes" "sh_al" "sh_fb" "splits" "sp_def"
 line
@@ -191,7 +161,7 @@ mapfile -t SZ <<< "$(
 		# Remove unit (kB) convert to bytes
 		size_kb="${size_label%kB}"
 		bytes=$(( size_kb * 1024 ))
-
+		
 		# Output: bytes<TAB>human_label<TAB>directory
 		printf "%d\t%sk\t%s\n" "$bytes" "$size_kb" "$dir"
 	done | sort -n -k1,1
@@ -231,7 +201,7 @@ done
 if (( VERBOSE )); then
     line
     printf "Legend: alloc=anon_fault_alloc  fb=anon_fault_fallback  succ=alloc/(alloc+fb)\n"
-    printf "        nr=nr_anon  nr_bytes=nr*page_size\n"
+    printf "        nr=nr_anon  nr_bytes=nr×page_size\n"
     printf "        sh_al=shmem_alloc  sh_fb=shmem_fallback\n"
     printf "        splits=split  sp_def=split_deferred\n"
 fi
@@ -239,30 +209,29 @@ fi
 ###
 # THP usage summary
 ###
-printf "\n"
-printf "Current THP-backed memory\n"
+printf "\nIn-use THP-backed memory\n"
 line
 
-# Fetch values directly via helper (in kB)
+# Fetch /proc/meminfo values
+sys_mem_kb="$(meminfo_val MemTotal)"
+mem_avail_kb="$(meminfo_val MemAvailable)"
 anon_kb="$(meminfo_val AnonHugePages)"
 shmem_kb="$(meminfo_val ShmemHugePages)"
 file_kb="$(meminfo_val FileHugePages)"
-total_kb=$(( anon_kb + shmem_kb + file_kb ))
+
+thp_bytes=$(( (anon_kb + shmem_kb + file_kb) * 1024 ))
+used_mem_bytes=$(( (sys_mem_kb - mem_avail_kb) * 1024 ))
 
 # Print results with binary units
 printf "%-14s %10s \n" "AnonHugePages"  "$(kb_h "$anon_kb")"
 printf "%-14s %10s \n" "ShmemHugePages" "$(kb_h "$shmem_kb")"
 printf "%-14s %10s \n" "FileHugePages"  "$(kb_h "$file_kb")"
 # Show THP as percentage of total memory
-if [[ "$SYS_MEM" -gt 0 ]]; then
-    total_bytes=$(( total_kb * 1024 ))
-    printf "%-14s %10s / %s (%s)\n" "THP / RAM" \
-        "$(bytes_h "$total_bytes")" \
-        "$(bytes_h "$SYS_MEM")" \
-        "$(pct "$total_bytes" "$SYS_MEM")"
-else
-    printf "%-14s %10s \n" "Total THP"      "$(kb_h "$total_kb")"
-fi
+printf "%-14s %10s / %s (%s)\n" "THP / Used RAM" \
+    "$(bytes_h "$thp_bytes")" \
+    "$(bytes_h "$used_mem_bytes")" \
+    "$(pct "$thp_bytes" "$used_mem_bytes" )"
+
 line
 
 ###
