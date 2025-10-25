@@ -201,7 +201,7 @@ done
 if (( VERBOSE )); then
     line
     printf "Legend: alloc=anon_fault_alloc  fb=anon_fault_fallback  succ=alloc/(alloc+fb)\n"
-    printf "        nr=nr_anon  nr_bytes=nr×page_size\n"
+    printf "        nr=nr_anon  nr_bytes=nr*page_size\n"
     printf "        sh_al=shmem_alloc  sh_fb=shmem_fallback\n"
     printf "        splits=split  sp_def=split_deferred\n"
 fi
