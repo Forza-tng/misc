@@ -17,6 +17,7 @@ The patches in this repository are named according to the kernel version they ar
 - **btrfs_allocator_hints-6.12_v1.patch**: For kernel version 6.12
 - **btrfs_allocator_hints-6.12_v2.patch**: Second iteration for kernel version 6.12
 - **btrfs_allocator_hints-6.12_v3.patch**: Latest patch for kernel version 6.12 with RAID1 read balance policy
+- **btrfs_allocator_hints-6.18_v1.patch**: For kernel version 6.18
 
 Each patch is tailored to work with its respective kernel version. Ensure you match the patch version to your Linux kernel version to avoid compatibility issues.
 
@@ -25,7 +26,7 @@ You can find the original discussion about these patches on the Linux Btrfs mail
 
 ### Author of this patch set
 This repository is a mirror of the patches that have been graciously compiled and maintained by Kakra. They are available on his GitHub page:
-[Kakra's GitHub Repository](https://github.com/kakra/linux/pull/36)
+[Kakra's GitHub Repository](https://github.com/kakra/linux/pull/40)
 
 ## Disclaimer
 These patches are experimental and not officially included in the Linux kernel. Use them at your own risk. Always ensure you have backups of your data before testing these patches in production environments.
