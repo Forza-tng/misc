@@ -1,7 +1,7 @@
 From 01068a065edccb36568d7fdc0365b2c701c7781c Mon Sep 17 00:00:00 2001
 From: Filipe Manana <fdmanana@kernel.org>
 Date: Mon, 23 Jun 2025 13:56:36 +0200
-Subject: [PATCH 01/11] btrfs: avoid RCU stall during backref list construction
+Subject: [PATCH 01/12] btrfs: avoid RCU stall during backref list construction
 
 The following kernel message may be logged if `add_inline_refs()` or
 `add_keyed_refs()` block for too long:
@@ -98,7 +98,7 @@ index 2ab550a1e715a7..8895a2b446eb5d 100644
 From 8ff33f96d6a938a1a3d7abe4567e1604e745e590 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Sat, 13 Dec 2025 17:01:09 +0100
-Subject: [PATCH 02/11] btrfs: add new Kconfig option for btrfs allocator hints
+Subject: [PATCH 02/12] btrfs: add new Kconfig option for btrfs allocator hints
 
 Signed-off-by: Kai Krakow <kai@kaishome.de>
 ---
@@ -165,7 +165,7 @@ index 4438637c8900cd..940a24b3402598 100644
 From 9b28489221e3613f2d188c5378d9bfe6b8551880 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Sat, 13 Dec 2025 17:05:53 +0100
-Subject: [PATCH 03/11] btrfs: add flags to give a hint to the chunk allocator
+Subject: [PATCH 03/12] btrfs: add flags to give a hint to the chunk allocator
 
 Add the following flags to give a hint about which chunk should be
 allocated on which a disk.
@@ -219,7 +219,7 @@ index fc29d273845d84..bed65f91c67821 100644
 From 34ed0e489aeaeab1a6b6f7df0e8589b18e1a3f13 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Sat, 13 Dec 2025 17:12:14 +0100
-Subject: [PATCH 04/11] btrfs: export dev_item.type in
+Subject: [PATCH 04/12] btrfs: export dev_item.type in
  /sys/fs/btrfs/<uuid>/devinfo/<devid>/type
 
 Co-authored-by: Goffredo Baroncelli <kreijack@inwind.it>
@@ -265,7 +265,7 @@ index 81f52c1f55ce57..fbce70fa37bf82 100644
 From 42e48fd39c87d540a7b72e2f3133c135e1e97ba0 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Sat, 13 Dec 2025 21:18:00 +0100
-Subject: [PATCH 05/11] btrfs: change the DEV_ITEM 'type' field via sysfs
+Subject: [PATCH 05/12] btrfs: change the DEV_ITEM 'type' field via sysfs
 
 v2: Adds a check to prevent modification while the file system is still mounting.
 
@@ -386,10 +386,10 @@ index 2cbf8080eade06..639aeaecc11644 100644
  bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
  const u8 *btrfs_sb_fsid_ptr(const struct btrfs_super_block *sb);
 
-From 5d2874329ace7d11c45cad75ad7db33065347352 Mon Sep 17 00:00:00 2001
+From 3212d021a19de63875b3483e4d27d515e073263c Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Sat, 13 Dec 2025 17:24:36 +0100
-Subject: [PATCH 06/11] btrfs: add allocator_hint mode
+Subject: [PATCH 06/12] btrfs: add allocator_hint mode
 
 When this mode is enabled, the chunk allocation policy is modified as
 follows:
@@ -425,7 +425,7 @@ Signed-off-by: Kai Krakow <kai@kaishome.de>
  2 files changed, 107 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8843578e1b4e04..ae12af80001ef5 100644
+index 8843578e1b4e04..ee94e02013849f 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -184,6 +184,21 @@ enum btrfs_raid_types __attribute_const__ btrfs_bg_flags_to_raid_index(u64 flags
@@ -492,7 +492,7 @@ index 8843578e1b4e04..ae12af80001ef5 100644
 +			/*
 +			 * skip BTRFS_DEV_METADATA_ONLY disks
 +			 */
-+			if (hint == BTRFS_DEV_ALLOCATION_METADATA_ONLY)
++			if (BTRFS_DEV_ALLOCATION_METADATA_ONLY == hint)
 +				continue;
 +			/*
 +			 * if a data chunk must be allocated,
@@ -506,7 +506,7 @@ index 8843578e1b4e04..ae12af80001ef5 100644
 +			/*
 +			 * skip BTRFS_DEV_DATA_ONLY disks
 +			 */
-+			if (hint == BTRFS_DEV_ALLOCATION_DATA_ONLY)
++			if (BTRFS_DEV_ALLOCATION_DATA_ONLY == hint)
 +				continue;
 +			/*
 +			 * if a data chunk must be allocated,
@@ -585,10 +585,10 @@ index 639aeaecc11644..d7a9a5bc20717b 100644
  
  struct btrfs_raid_attr {
 
-From cc4d58573bdd0ab3355891b3b3f969034f44e020 Mon Sep 17 00:00:00 2001
+From d9b8b0c82aefcd3855ef8aa7fec8f544fac99aca Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kk@netactive.de>
 Date: Thu, 27 Jun 2024 20:05:58 +0200
-Subject: [PATCH 07/11] btrfs: add allocator_hint for no allocation preferred
+Subject: [PATCH 07/12] btrfs: add allocator_hint for no allocation preferred
 
 This is useful where you want to prevent new allocations of chunks on a
 disk which is going to be removed from the pool anyways, e.g. due to
@@ -601,7 +601,7 @@ Signed-off-by: Kai Krakow <kai@kaishome.de>
  2 files changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ae12af80001ef5..ebd66abf792946 100644
+index ee94e02013849f..394957d5e850fa 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -195,6 +195,7 @@ static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_MASK_COUNT] = {
@@ -617,7 +617,7 @@ index ae12af80001ef5..ebd66abf792946 100644
  			 * higher priority)
  			 */
 -			devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
-+			if (hint == BTRFS_DEV_ALLOCATION_PREFERRED_NONE)
++			if (BTRFS_DEV_ALLOCATION_PREFERRED_NONE == hint)
 +				devices_info[ndevs].alloc_hint = -alloc_hint_map[hint];
 +			else
 +				devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
@@ -638,10 +638,10 @@ index bed65f91c67821..8ed556bd2d5917 100644
  
  #endif
 
-From 2738442352cc8c8bbbed92ba6e2621724f5a9be7 Mon Sep 17 00:00:00 2001
+From f45c4e838ce4f7f98563b797f3f09fd0068641ea Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Fri, 6 Dec 2024 00:55:31 +0100
-Subject: [PATCH 08/11] btrfs: add allocator_hint to disable allocation
+Subject: [PATCH 08/12] btrfs: add allocator_hint to disable allocation
  completely
 
 This is useful where you want to prevent new allocations of chunks to
@@ -662,7 +662,7 @@ Signed-off-by: Kai Krakow <kai@kaishome.de>
  2 files changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ebd66abf792946..e0e26ace7898eb 100644
+index 394957d5e850fa..815292712a243e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -191,6 +191,7 @@ enum btrfs_raid_types __attribute_const__ btrfs_bg_flags_to_raid_index(u64 flags
@@ -675,24 +675,24 @@ index ebd66abf792946..e0e26ace7898eb 100644
  	[BTRFS_DEV_ALLOCATION_PREFERRED_METADATA] = 1,
 @@ -5344,6 +5345,11 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
  			 */
- 			if (hint == BTRFS_DEV_ALLOCATION_METADATA_ONLY)
+ 			if (BTRFS_DEV_ALLOCATION_METADATA_ONLY == hint)
  				continue;
 +			/*
 +			 * skip BTRFS_DEV_NONE_ONLY disks
 +			 */
-+			if (hint == BTRFS_DEV_ALLOCATION_NONE_ONLY)
++			if (BTRFS_DEV_ALLOCATION_NONE_ONLY == hint)
 +				continue;
  			/*
  			 * if a data chunk must be allocated,
  			 * sort also by hint (data disk
 @@ -5358,6 +5364,11 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
  			 */
- 			if (hint == BTRFS_DEV_ALLOCATION_DATA_ONLY)
+ 			if (BTRFS_DEV_ALLOCATION_DATA_ONLY == hint)
  				continue;
 +			/*
 +			 * skip BTRFS_DEV_NONE_ONLY disks
 +			 */
-+			if (hint == BTRFS_DEV_ALLOCATION_NONE_ONLY)
++			if (BTRFS_DEV_ALLOCATION_NONE_ONLY == hint)
 +				continue;
  			/*
  			 * if a data chunk must be allocated,
@@ -713,10 +713,10 @@ index 8ed556bd2d5917..2c8f407be8a442 100644
  #endif
  
 
-From 2b313b23c4bb3fd96b18ded45cdfd7b6f65d8b0d Mon Sep 17 00:00:00 2001
+From 8305177a0ea90dff5a2263aa11de061054e00ae2 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Sat, 13 Dec 2025 17:50:16 +0100
-Subject: [PATCH 09/11] btrfs: add io read stats per device to devinfo
+Subject: [PATCH 09/12] btrfs: add io read stats per device to devinfo
 
 This adds read stats per device to devinfo to evaluate the effects of
 different read policies better.
@@ -807,7 +807,7 @@ index dfdfeda7c50393..d8eac006904b6b 100644
  	BTRFS_ATTR_PTR(devid, fsid),
  	BTRFS_ATTR_PTR(devid, in_fs_metadata),
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e0e26ace7898eb..c1d6a575511b4d 100644
+index 815292712a243e..70cebae42de356 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -6139,6 +6139,15 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
@@ -879,10 +879,10 @@ index d7a9a5bc20717b..c7623e2e3691b3 100644
  
  /*
 
-From 503ec91261227e35f3cbab1050b7e261922a5552 Mon Sep 17 00:00:00 2001
+From 4a6d0120d8031af45ca375a9102c34573a757ca4 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Sat, 13 Dec 2025 18:34:36 +0100
-Subject: [PATCH 10/11] btrfs: move read policies out of experimental
+Subject: [PATCH 10/12] btrfs: move read policies out of experimental
 
 Read policies seem safe and stable enough to move it out of the
 experimental feature set. This allows us to add more policies without
@@ -1016,7 +1016,7 @@ index 0f94ae9232101b..ef1bd5024be4d4 100644
  char *btrfs_get_mod_read_policy(void);
  #endif
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c1d6a575511b4d..3c24fbec49c728 100644
+index 70cebae42de356..667c96ebfd0141 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -1282,7 +1282,7 @@ static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
@@ -1079,10 +1079,10 @@ index c7623e2e3691b3..af1ccc2a3006e2 100644
  	enum btrfs_offload_csum_mode offload_csum_mode;
  #endif
 
-From 8a8411c325af4d3298dd52075ee5bbe9eacdfc74 Mon Sep 17 00:00:00 2001
+From 6137992d4083ed4c5b50914a5bb1a8a9058b4169 Mon Sep 17 00:00:00 2001
 From: Kai Krakow <kai@kaishome.de>
 Date: Fri, 25 Apr 2025 21:46:52 +0200
-Subject: [PATCH 11/11] btrfs: add in-flight queue read policy
+Subject: [PATCH 11/12] btrfs: add in-flight queue read policy
 
 Select the preferred stripe based on the mirror with the least
 in-flight requests.
@@ -1116,7 +1116,7 @@ index f9fe6a27509bc8..9263125a064cd3 100644
  
  int btrfs_read_policy_to_enum(const char *str, s64 *value_ret)
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3c24fbec49c728..9683a151087663 100644
+index 667c96ebfd0141..69e24f5b7d4705 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -34,6 +34,10 @@
@@ -1199,3 +1199,66 @@ index af1ccc2a3006e2..1d02a79e7b91a6 100644
  	/* Read from a specific device. */
  	BTRFS_READ_POLICY_DEVID,
  #endif
+
+From 6d23e96eeae7587d380a8968e9f438bb76cef7a4 Mon Sep 17 00:00:00 2001
+From: Kai Krakow <kk@netactive.de>
+Date: Wed, 17 Dec 2025 14:01:08 +0100
+Subject: [PATCH 12/12] GITHUB: btrfs: add build workflow
+
+---
+ .github/workflows/makefile.yml | 34 ++++++++++++++++++++++++++++++++++
+ .gitignore                     |  3 +++
+ 2 files changed, 37 insertions(+)
+ create mode 100644 .github/workflows/makefile.yml
+
+diff --git a/.github/workflows/makefile.yml b/.github/workflows/makefile.yml
+new file mode 100644
+index 00000000000000..e1a5d4bd88c467
+--- /dev/null
++++ b/.github/workflows/makefile.yml
+@@ -0,0 +1,34 @@
++name: Makefile CI
++
++on:
++  push:
++    branches:
++      - 'rebase-*/btrfs-patches'
++  pull_request:
++    branches:
++      - 'rebase-*/btrfs-patches'
++  workflow_dispatch:
++
++jobs:
++  build:
++
++    runs-on: ubuntu-latest
++
++    steps:
++    - uses: actions/checkout@v4
++
++    - name: Configure minimal kernel
++      run: make tinyconfig
++
++    - name: Configure btrfs
++      run: |
++        echo "CONFIG_BLOCK=y" >>.config
++        echo "CONFIG_BTRFS_FS=y" >>.config
++        echo "CONFIG_BTRFS_FS_POSIX_ACL=y" >>.config
++        echo "CONFIG_BTRFS_ALLOCATOR_HINTS=y" >>.config
++        echo "CONFIG_BTRFS_PER_DEVICE_IO_STATS=y" >>.config
++        echo "CONFIG_BTRFS_READ_POLICIES=y" >>.config
++        make oldconfig
++
++    - name: Compile kernel
++      run: make -j$(nproc) all
+diff --git a/.gitignore b/.gitignore
+index 86a1ba0d903539..d09ac6e2f574a3 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -183,3 +183,6 @@ sphinx_*/
+ 
+ # Rust analyzer configuration
+ /rust-project.json
++
++# Allow Github workflows
++!/.github
